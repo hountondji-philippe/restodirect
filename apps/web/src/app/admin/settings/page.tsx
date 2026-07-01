@@ -1,101 +1,316 @@
 'use client';
 
-import { Settings, Mail, Shield, Database, Globe, Info } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Settings, Mail, Shield, Database, Globe, Info, Loader2, CheckCircle, AlertCircle, Save } from 'lucide-react';
+
+interface PlatformSettings {
+  platformName: string;
+  platformVersion: string;
+  environment: string;
+  emailProvider: string;
+  emailMode: string;
+  emailFrom: string;
+  databaseType: string;
+  databaseFile: string;
+  ormVersion: string;
+  authProvider: string;
+  hashAlgorithm: string;
+  rateLimitingEnabled: boolean;
+}
 
 export default function AdminSettingsPage() {
-  const settingsSections = [
-    {
-      title: 'Général',
-      description: 'Paramètres généraux de la plateforme',
-      icon: Settings,
-      color: 'text-blue-600 bg-blue-100',
-      items: [
-        { label: 'Nom de la plateforme', value: 'RestoDirect' },
-        { label: 'Version', value: '1.0.0-dev' },
-        { label: 'Environnement', value: 'Développement' },
-      ],
-    },
-    {
-      title: 'Email',
-      description: 'Configuration des emails',
-      icon: Mail,
-      color: 'text-green-600 bg-green-100',
-      items: [
-        { label: 'Provider', value: 'Resend' },
-        { label: 'Mode', value: 'Sandbox (test)' },
-        { label: 'Email expéditeur', value: 'onboarding@resend.dev' },
-      ],
-    },
-    {
-      title: 'Base de données',
-      description: 'Informations sur la base de données',
-      icon: Database,
-      color: 'text-purple-600 bg-purple-100',
-      items: [
-        { label: 'Type', value: 'SQLite' },
-        { label: 'Fichier', value: 'dev.db' },
-        { label: 'ORM', value: 'Prisma 5.22.0' },
-      ],
-    },
-    {
-      title: 'Sécurité',
-      description: 'Paramètres de sécurité',
-      icon: Shield,
-      color: 'text-orange-600 bg-orange-100',
-      items: [
-        { label: 'Authentification', value: 'NextAuth.js' },
-        { label: 'Hashage', value: 'bcrypt (12 rounds)' },
-        { label: 'Rate limiting', value: 'Activé' },
-      ],
-    },
-  ];
+  const [settings, setSettings] = useState<PlatformSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const res = await fetch('/api/admin/settings');
+      const data = await res.json();
+      if (res.ok) {
+        setSettings(data);
+      }
+    } catch (err) {
+      setError('Erreur de chargement des paramètres');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!settings) return;
+
+    setSaving(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setSuccess('Paramètres sauvegardés avec succès');
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        setError(data.error || 'Erreur lors de la sauvegarde');
+      }
+    } catch (err) {
+      setError('Erreur de connexion');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateSetting = (key: keyof PlatformSettings, value: any) => {
+    if (!settings) return;
+    setSettings({ ...settings, [key]: value });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <Loader2 className="h-12 w-12 animate-spin text-orange-500 mb-4" />
+        <p className="text-gray-600 text-sm">Chargement des paramètres...</p>
+      </div>
+    );
+  }
+
+  if (!settings) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+        <p className="text-gray-600">Erreur de chargement des paramètres</p>
+      </div>
+    );
+  }
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Paramètres</h1>
-        <p className="text-xs sm:text-sm text-muted-foreground">
-          Configuration de la plateforme RestoDirect
-        </p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Paramètres</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Configuration de la plateforme RestoDirect
+          </p>
+        </div>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50 transition-colors"
+        >
+          {saving ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Sauvegarde...
+            </>
+          ) : (
+            <>
+              <Save className="h-4 w-4" />
+              Sauvegarder
+            </>
+          )}
+        </button>
       </div>
 
-      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 mb-6">
-        <div className="flex items-start gap-3">
-          <Info className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-amber-900">Mode développement</p>
-            <p className="text-xs text-amber-700 mt-1">
-              Ces paramètres sont en lecture seule pour l'instant. La modification des paramètres sera disponible dans une prochaine version.
-            </p>
-          </div>
+      {success && (
+        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-4 flex items-start gap-3">
+          <CheckCircle className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+          <p className="text-sm text-green-800">{success}</p>
         </div>
-      </div>
+      )}
+
+      {error && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+          <p className="text-sm text-red-800">{error}</p>
+        </div>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2">
-        {settingsSections.map((section) => {
-          const Icon = section.icon;
-          return (
-            <div key={section.title} className="rounded-lg border border-border bg-background p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className={`p-3 rounded-full ${section.color}`}>
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">{section.title}</h2>
-                  <p className="text-xs text-muted-foreground">{section.description}</p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                {section.items.map((item) => (
-                  <div key={item.label} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                    <span className="text-sm text-muted-foreground">{item.label}</span>
-                    <span className="text-sm font-medium text-foreground">{item.value}</span>
-                  </div>
-                ))}
-              </div>
+        <div className="rounded-lg border border-border bg-background p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 rounded-full text-blue-600 bg-blue-100">
+              <Settings className="h-5 w-5" />
             </div>
-          );
-        })}
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">Général</h2>
+              <p className="text-xs text-muted-foreground">Paramètres généraux de la plateforme</p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Nom de la plateforme</label>
+              <input
+                type="text"
+                value={settings.platformName}
+                onChange={(e) => updateSetting('platformName', e.target.value)}
+                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Version</label>
+              <input
+                type="text"
+                value={settings.platformVersion}
+                onChange={(e) => updateSetting('platformVersion', e.target.value)}
+                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Environnement</label>
+              <select
+                value={settings.environment}
+                onChange={(e) => updateSetting('environment', e.target.value)}
+                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                <option value="development">Développement</option>
+                <option value="production">Production</option>
+                <option value="staging">Staging</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-border bg-background p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 rounded-full text-green-600 bg-green-100">
+              <Mail className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">Email</h2>
+              <p className="text-xs text-muted-foreground">Configuration des emails</p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Provider</label>
+              <select
+                value={settings.emailProvider}
+                onChange={(e) => updateSetting('emailProvider', e.target.value)}
+                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                <option value="gmail">Gmail</option>
+                <option value="resend">Resend</option>
+                <option value="smtp">SMTP</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Mode</label>
+              <select
+                value={settings.emailMode}
+                onChange={(e) => updateSetting('emailMode', e.target.value)}
+                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                <option value="sandbox">Sandbox (test)</option>
+                <option value="production">Production</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Email expéditeur</label>
+              <input
+                type="email"
+                value={settings.emailFrom}
+                onChange={(e) => updateSetting('emailFrom', e.target.value)}
+                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-border bg-background p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 rounded-full text-purple-600 bg-purple-100">
+              <Database className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">Base de données</h2>
+              <p className="text-xs text-muted-foreground">Informations sur la base de données</p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Type</label>
+              <input
+                type="text"
+                value={settings.databaseType}
+                onChange={(e) => updateSetting('databaseType', e.target.value)}
+                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Fichier/Service</label>
+              <input
+                type="text"
+                value={settings.databaseFile}
+                onChange={(e) => updateSetting('databaseFile', e.target.value)}
+                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">ORM</label>
+              <input
+                type="text"
+                value={settings.ormVersion}
+                onChange={(e) => updateSetting('ormVersion', e.target.value)}
+                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-border bg-background p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 rounded-full text-orange-600 bg-orange-100">
+              <Shield className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">Sécurité</h2>
+              <p className="text-xs text-muted-foreground">Paramètres de sécurité</p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Authentification</label>
+              <input
+                type="text"
+                value={settings.authProvider}
+                onChange={(e) => updateSetting('authProvider', e.target.value)}
+                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Hashage</label>
+              <input
+                type="text"
+                value={settings.hashAlgorithm}
+                onChange={(e) => updateSetting('hashAlgorithm', e.target.value)}
+                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="rateLimiting"
+                checked={settings.rateLimitingEnabled}
+                onChange={(e) => updateSetting('rateLimitingEnabled', e.target.checked)}
+                className="h-4 w-4 rounded border-border text-orange-500 focus:ring-orange-500"
+              />
+              <label htmlFor="rateLimiting" className="text-sm font-medium text-foreground">
+                Rate limiting activé
+              </label>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="mt-6 rounded-lg border border-border bg-background p-6">

@@ -300,3 +300,22 @@ model Address {
 
   @@map("addresses")
 }
+model PlatformSettings {
+  id                  String    @id @default(cuid())
+  platformName        String    @default("RestoDirect")
+  platformVersion     String    @default("1.0.0")
+  environment         String    @default("production")
+  emailProvider       String    @default("gmail")
+  emailMode           String    @default("production")
+  emailFrom           String    @default("noreply@restodirect.com")
+  databaseType        String    @default("PostgreSQL")
+  databaseFile        String    @default("Neon")
+  ormVersion          String    @default("Prisma 5.22.0")
+  authProvider        String    @default("NextAuth.js")
+  hashAlgorithm       String    @default("bcrypt (12 rounds)")
+  rateLimitingEnabled Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@map("platform_settings")
+}

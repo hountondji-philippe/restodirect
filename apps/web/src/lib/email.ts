@@ -1,13 +1,24 @@
+import nodemailer from 'nodemailer';
+
 interface SendEmailOptions {
   to: string;
   subject: string;
   html: string;
 }
 
+const createTransporter = () => {
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASSWORD,
+    },
+  });
+};
+
 export async function sendEmail({ to, subject, html }: SendEmailOptions) {
   try {
-    // Mode simulation si pas de clé Resend
-    if (!process.env.RESEND_API_KEY) {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
       console.log('=== EMAIL SIMULÉ ===');
       console.log(`À: ${to}`);
       console.log(`Sujet: ${subject}`);
@@ -16,25 +27,18 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions) {
       return { success: true, data: { id: 'simulated' } };
     }
 
-    const { Resend } = await import('resend');
-    const resend = new Resend(process.env.RESEND_API_KEY);
+    const transporter = createTransporter();
 
-    // Utiliser le domaine de test de Resend (onboarding@resend.dev)
-    // Cela fonctionne sans vérifier ton domaine
-    const { data, error } = await resend.emails.send({
-      from: 'RestoDirect <onboarding@resend.dev>',
-      to: [to],
+    const mailOptions = {
+      from: `"RestoDirect" <${process.env.EMAIL_USER}>`,
+      to,
       subject,
       html,
-    });
+    };
 
-    if (error) {
-      console.error('Erreur envoi email:', error);
-      return { success: false, error: error.message };
-    }
-
-    console.log('✅ Email envoyé avec succès à:', to);
-    return { success: true, data };
+    await transporter.sendMail(mailOptions);
+    console.log('Email envoyé avec succès à:', to);
+    return { success: true, data: { id: Date.now().toString() } };
   } catch (error: any) {
     console.error('Erreur envoi email:', error);
     return { success: false, error: error.message };
