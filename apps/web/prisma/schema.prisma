@@ -1,0 +1,301 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(cuid())
+  name            String?
+  email           String    @unique
+  emailVerified   DateTime?
+  image           String?
+  password        String?
+  role            String    @default("CLIENT")
+  phone           String?
+  address         String?
+  isApproved      Boolean   @default(false)
+  approvedBy      String?
+  approvedAt      DateTime?
+  rating          Float     @default(0)
+  totalDeliveries Int       @default(0)
+  isAvailable     Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  accounts        Account[]
+  sessions        Session[]
+  orders          Order[]
+  reviews         Review[]           @relation("UserReviews")
+  driverReviews   Review[]           @relation("DriverReviews")
+  restaurants     Restaurant[]
+  deliveries      Delivery[]
+  driverApprovals DriverApproval[]
+  invitations     Invitation[]       @relation("InvitationCreator")
+  addresses       Address[]
+  
+  @@map("users")
+}
+
+model Restaurant {
+  id            String    @id @default(cuid())
+  name          String
+  description   String
+  image         String
+  cuisine       String
+  rating        Float     @default(0)
+  reviewCount   Int       @default(0)
+  address       String
+  city          String
+  country       String
+  phone         String
+  deliveryTime  String
+  priceRange    String
+  currency      String    @default("XOF")
+  isActive      Boolean   @default(true)
+  ownerId       String?
+  owner         User?     @relation(fields: [ownerId], references: [id])
+  momoMTN           String?
+  momoMTNName       String?
+  momoMoov          String?
+  momoMoovName      String?
+  momoCeltiis       String?
+  momoCeltiisName   String?
+  momoInstructions  String?
+
+  menuItems       MenuItem[]
+  orders          Order[]
+  reviews         Review[]
+  deliveries      Delivery[]
+  driverApprovals DriverApproval[]
+  invitations     Invitation[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("restaurants")
+}
+
+model MenuItem {
+  id            String    @id @default(cuid())
+  name          String
+  description   String
+  price         Float
+  image         String
+  category      String
+  isAvailable   Boolean   @default(true)
+  restaurantId  String
+  
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orderItems    OrderItem[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("menu_items")
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  orderNumber     String        @unique
+  status          String        @default("PENDING")
+  total           Float
+  deliveryFee     Float
+  paymentMethod   String
+  paymentProvider String?
+  paymentStatus   String        @default("PENDING")
+  deliveryAddress String
+  city            String
+  notes           String?
+  userEmail       String?
+  userName        String?
+  userPhone       String?
+  confirmedAt     DateTime?
+  autoConfirmedAt DateTime?
+  deliveryCode    String?
+  
+  momoTransactionId   String?
+  momoPaymentProof    String?
+  momoPaymentConfirmed Boolean  @default(false)
+  momoConfirmedAt     DateTime?
+  momoConfirmedBy     String?
+  momoRejectedAt      DateTime?
+  momoRejectionReason String?
+  
+  userId          String?
+  user            User?         @relation(fields: [userId], references: [id])
+  restaurantId    String
+  restaurant      Restaurant    @relation(fields: [restaurantId], references: [id])
+  
+  items           OrderItem[]
+  delivery        Delivery?
+  notifications   DeliveryNotification[]
+  review          Review?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id            String    @id @default(cuid())
+  quantity      Int
+  price         Float
+  orderId       String
+  order         Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId    String
+  menuItem      MenuItem  @relation(fields: [menuItemId], references: [id])
+
+  @@map("order_items")
+}
+
+model Delivery {
+  id                String    @id @default(cuid())
+  status            String    @default("PENDING")
+  orderId           String    @unique
+  order             Order     @relation(fields: [orderId], references: [id])
+  driverId          String
+  driver            User      @relation(fields: [driverId], references: [id])
+  restaurantId      String
+  restaurant        Restaurant @relation(fields: [restaurantId], references: [id])
+  acceptedAt        DateTime?
+  pickedUpAt        DateTime?
+  deliveredAt       DateTime?
+  confirmedByClient Boolean   @default(false)
+  earnings          Float     @default(0)
+  distance          Float?
+  rating            Int?
+  comment           String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@map("deliveries")
+}
+
+model DriverApproval {
+  id            String    @id @default(cuid())
+  driverId      String
+  driver        User      @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  restaurantId  String
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  status        String    @default("PENDING")
+  approvedAt    DateTime?
+  rejectedAt    DateTime?
+  reason        String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([driverId, restaurantId])
+  @@map("driver_approvals")
+}
+
+model Review {
+  id                 String    @id @default(cuid())
+  orderId            String    @unique
+  userId             String
+  restaurantId       String
+  restaurantRating   Int
+  restaurantComment  String?
+  driverId           String?
+  driverRating       Int?
+  driverComment      String?
+  createdAt          DateTime  @default(now())
+  
+  order              Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user               User       @relation("UserReviews", fields: [userId], references: [id])
+  restaurant         Restaurant @relation(fields: [restaurantId], references: [id])
+  driver             User?      @relation("DriverReviews", fields: [driverId], references: [id])
+
+  @@map("reviews")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  session_state     String?
+  id_token          String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Invitation {
+  id           String    @id @default(cuid())
+  email        String
+  token        String    @unique
+  type         String
+  status       String    @default("PENDING")
+  restaurantId String?
+  createdBy    String
+  expiresAt    DateTime
+  createdAt    DateTime  @default(now())
+  usedAt       DateTime?
+  
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  creator      User        @relation("InvitationCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  
+  @@index([token])
+  @@index([email])
+  @@map("invitations")
+}
+
+model DeliveryNotification {
+  id            String    @id @default(cuid())
+  orderId       String
+  order         Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  type          String
+  message       String
+  sentTo        String
+  sentAt        DateTime  @default(now())
+  readAt        DateTime?
+
+  @@index([orderId])
+  @@map("delivery_notifications")
+}
+
+model Address {
+  id            String    @id @default(cuid())
+  label         String
+  fullName      String
+  phone         String
+  address       String
+  city          String
+  country       String    @default("Bénin")
+  isDefault     Boolean   @default(false)
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("addresses")
+}
