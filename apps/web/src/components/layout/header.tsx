@@ -14,7 +14,6 @@ export function Header() {
   const cartItemCount = useCartStore((state) => state.getItemCount());
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  // Fermer le menu utilisateur si on clique ailleurs
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
@@ -39,14 +38,12 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white shadow-sm">
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between gap-4">
-          {/* Logo */}
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between gap-3 sm:gap-4">
           <Link href="/" className="flex items-center gap-2 shrink-0">
-            <span className="text-xl sm:text-2xl font-bold text-orange-500">RestoDirect</span>
+            <span className="text-lg sm:text-xl md:text-2xl font-bold text-orange-500">RestoDirect</span>
           </Link>
 
-          {/* Recherche Desktop */}
           <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-4">
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -60,7 +57,6 @@ export function Header() {
             </div>
           </form>
 
-          {/* Navigation Desktop */}
           <nav className="hidden lg:flex items-center gap-6">
             <Link href="/search" className="text-sm font-medium text-gray-700 hover:text-orange-500 transition-colors">
               Restaurants
@@ -69,17 +65,9 @@ export function Header() {
               <Package className="h-4 w-4" />
               Suivre
             </Link>
-            <Link href="/partner" className="text-sm font-medium text-gray-700 hover:text-orange-500 transition-colors">
-              Partenaire
-            </Link>
-            <Link href="/driver/register" className="text-sm font-medium text-green-600 hover:text-green-700 transition-colors font-semibold">
-              Livreur
-            </Link>
           </nav>
 
-          {/* Actions */}
-          <div className="flex items-center gap-2 sm:gap-4">
-            {/* Panier */}
+          <div className="flex items-center gap-2">
             <Link href="/cart" className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6 text-gray-700" />
               {cartItemCount > 0 && (
@@ -89,7 +77,6 @@ export function Header() {
               )}
             </Link>
 
-            {/* Menu Utilisateur (si connecté) */}
             {session?.user ? (
               <div className="relative" ref={userMenuRef}>
                 <button
@@ -101,12 +88,11 @@ export function Header() {
                       {(session.user as any).name?.[0]?.toUpperCase() || 'U'}
                     </span>
                   </div>
-                  <ChevronDown className={`h-4 w-4 text-gray-600 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`hidden sm:block h-4 w-4 text-gray-600 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
 
-                {/* Dropdown Menu */}
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
                     <div className="px-4 py-3 border-b border-gray-100">
                       <p className="text-sm font-semibold text-gray-900 truncate">
                         {(session.user as any).name || 'Utilisateur'}
@@ -134,7 +120,6 @@ export function Header() {
                       Mes Commandes
                     </Link>
 
-                    {/* Menu spécifique selon le rôle */}
                     {(session.user as any).role === 'RESTAURATEUR' && (
                       <Link
                         href="/dashboard"
@@ -183,24 +168,22 @@ export function Header() {
             ) : (
               <Link
                 href="/auth/login"
-                className="hidden md:flex px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors shadow-sm"
+                className="hidden sm:flex px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors shadow-sm"
               >
-                Se connecter
+                Connexion
               </Link>
             )}
 
-            {/* Menu Burger Mobile */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
         </div>
 
-        {/* Recherche Mobile */}
-        <form onSubmit={handleSearch} className="md:hidden pb-3">
+        <form onSubmit={handleSearch} className="lg:hidden pb-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
@@ -213,9 +196,8 @@ export function Header() {
           </div>
         </form>
 
-        {/* Menu Mobile */}
         {isMenuOpen && (
-          <div className="md:hidden border-t border-gray-200 py-4 bg-white">
+          <div className="lg:hidden border-t border-gray-200 py-4 bg-white">
             <nav className="flex flex-col gap-1">
               <Link
                 href="/search"
@@ -231,20 +213,6 @@ export function Header() {
               >
                 <Package className="h-4 w-4" />
                 Suivre ma commande
-              </Link>
-              <Link
-                href="/partner"
-                className="text-sm font-medium text-gray-700 hover:text-orange-500 hover:bg-gray-50 transition-colors px-3 py-2 rounded-lg"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Devenir partenaire
-              </Link>
-              <Link
-                href="/driver/register"
-                className="text-sm font-medium text-green-600 hover:text-green-700 hover:bg-green-50 transition-colors px-3 py-2 rounded-lg font-semibold"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Devenir livreur
               </Link>
 
               {session?.user ? (
