@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, Mail, Shield, Database, Globe, Info, Loader2, CheckCircle, AlertCircle, Save } from 'lucide-react';
+import { Settings, Mail, Shield, Database, Globe, Info, Loader2, CheckCircle, AlertCircle, Save, Lock, Eye, EyeOff } from 'lucide-react';
 
 interface PlatformSettings {
   platformName: string;
@@ -24,6 +24,15 @@ export default function AdminSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordSuccess, setPasswordSuccess] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   useEffect(() => {
     fetchSettings();
@@ -68,6 +77,47 @@ export default function AdminSettingsPage() {
       setError('Erreur de connexion');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Les mots de passe ne correspondent pas');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordError('Le mot de passe doit contenir au moins 6 caractères');
+      return;
+    }
+
+    setChangingPassword(true);
+
+    try {
+      const res = await fetch('/api/profile/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setPasswordSuccess('Mot de passe modifié avec succès');
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setTimeout(() => setPasswordSuccess(''), 3000);
+      } else {
+        setPasswordError(data.error || 'Erreur lors du changement');
+      }
+    } catch (err) {
+      setPasswordError('Erreur de connexion');
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -311,6 +361,103 @@ export default function AdminSettingsPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="mt-6 rounded-lg border border-border bg-background p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-3 rounded-full text-red-600 bg-red-100">
+            <Lock className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">Changer le mot de passe</h2>
+            <p className="text-xs text-muted-foreground">Modifiez votre mot de passe de connexion</p>
+          </div>
+        </div>
+
+        {passwordSuccess && (
+          <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 flex items-start gap-2">
+            <CheckCircle className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
+            <p className="text-sm text-green-800">{passwordSuccess}</p>
+          </div>
+        )}
+
+        {passwordError && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+            <p className="text-sm text-red-800">{passwordError}</p>
+          </div>
+        )}
+
+        <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1 block">Mot de passe actuel</label>
+            <div className="relative">
+              <input
+                type={showCurrentPassword ? 'text' : 'password'}
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                required
+                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+              <button
+                type="button"
+                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              >
+                {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1 block">Nouveau mot de passe</label>
+            <div className="relative">
+              <input
+                type={showNewPassword ? 'text' : 'password'}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+                minLength={6}
+                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword(!showNewPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              >
+                {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Au moins 6 caractères</p>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1 block">Confirmer le nouveau mot de passe</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              minLength={6}
+              className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={changingPassword}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-orange-500 px-6 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50 transition-colors"
+          >
+            {changingPassword ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Modification...
+              </>
+            ) : (
+              <>
+                <Lock className="h-4 w-4" />
+                Changer le mot de passe
+              </>
+            )}
+          </button>
+        </form>
       </div>
 
       <div className="mt-6 rounded-lg border border-border bg-background p-6">
