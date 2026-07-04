@@ -213,6 +213,7 @@ export default function HomePage() {
       src="https://assets.mixkit.co/videos/preview/mixkit-chef-preparing-a-gourmet-dish-in-a-restaurant-kitchen-43589-large.mp4" 
       type="video/mp4" 
     />
+    Votre navigateur ne supporte pas la vidéo.
   </video>
 
   <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70"></div>
