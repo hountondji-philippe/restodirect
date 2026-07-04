@@ -91,7 +91,6 @@ export default function HomePage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [popularDishes, setPopularDishes] = useState<any[]>([]);
   const [cities, setCities] = useState<any[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
   const [email, setEmail] = useState('');
   const [newsletterSuccess, setNewsletterSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -190,53 +189,115 @@ export default function HomePage() {
     }
   };
 
-  const filteredRestaurants = restaurants.filter(r => {
-    const matchSearch = r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                       r.cuisine.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchSearch;
-  });
-
-  const popularRestaurants = filteredRestaurants.slice(0, 6);
+  const popularRestaurants = restaurants.slice(0, 6);
 
   return (
     <div className="min-h-screen bg-white">
       <section className="relative h-[500px] sm:h-[600px] md:h-[700px] overflow-hidden bg-black">
-  <video
-    autoPlay
-    loop
-    muted
-    playsInline
-    className="absolute inset-0 w-full h-full object-cover"
-    poster="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1920"
-  >
-    <source 
-      src="https://assets.mixkit.co/videos/preview/mixkit-chef-preparing-a-gourmet-dish-in-a-restaurant-kitchen-43589-large.mp4" 
-      type="video/mp4" 
-    />
-    Votre navigateur ne supporte pas la vidéo.
-  </video>
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="metadata"
+          className="absolute inset-0 w-full h-full object-cover"
+          poster="https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=1920"
+        >
+          <source 
+            src="https://videos.pexels.com/video-files/3195394/3195394-uhd_2560_1440_25fps.mp4" 
+            type="video/mp4" 
+          />
+        </video>
 
-  <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80"></div>
 
-  <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 sm:px-6 text-center">
-    <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-4 md:mb-6 max-w-5xl">
-      Vos plats préférés,
-      <span className="text-orange-400"> livrés chez vous</span>
-    </h1>
-    <p className="text-base sm:text-lg md:text-xl text-gray-200 mb-6 sm:mb-8 max-w-2xl px-2">
-      Découvrez les meilleurs restaurants d'Afrique et d'Europe. Commandez en quelques clics.
-    </p>
+        <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 sm:px-6 text-center">
+          <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-4 md:mb-6 max-w-5xl">
+            Vos plats préférés,
+            <span className="text-orange-400"> livrés chez vous</span>
+          </h1>
+          <p className="text-base sm:text-lg md:text-xl text-gray-200 mb-6 sm:mb-8 max-w-2xl px-2">
+            Découvrez les meilleurs restaurants d'Afrique et d'Europe. Commandez en quelques clics.
+          </p>
 
-    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mt-6 sm:mt-8 px-4">
-      <Link
-        href="/search"
-        className="inline-flex h-11 sm:h-12 items-center justify-center rounded-md bg-orange-500 px-6 sm:px-8 text-sm sm:text-base font-medium text-white shadow-lg transition-colors hover:bg-orange-600"
-      >
-        Voir les restaurants
-      </Link>
-    </div>
-  </div>
-</section>
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mt-6 sm:mt-8 px-4">
+            <Link
+              href="/search"
+              className="inline-flex h-11 sm:h-12 items-center justify-center rounded-md bg-orange-500 px-6 sm:px-8 text-sm sm:text-base font-medium text-white shadow-lg transition-colors hover:bg-orange-600"
+            >
+              Voir les restaurants
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-12 sm:py-16 px-4 sm:px-6 bg-white">
+        <div className="w-full max-w-7xl mx-auto">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 sm:mb-12 gap-4">
+            <div>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+                Restaurants populaires
+              </h2>
+              <p className="text-base sm:text-lg text-gray-600">Les restaurants les plus appréciés</p>
+            </div>
+            <Link href="/search" className="hidden md:inline-flex items-center gap-2 text-orange-500 hover:text-orange-600 font-medium">
+              Voir tout <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="bg-white rounded-xl overflow-hidden shadow-md animate-pulse">
+                  <div className="h-44 sm:h-48 bg-gray-200"></div>
+                  <div className="p-4 sm:p-5 space-y-3">
+                    <div className="h-5 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-full"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : popularRestaurants.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {popularRestaurants.map((restaurant) => (
+                <Link key={restaurant.id} href={`/restaurants/${restaurant.id}`} className="group rounded-xl overflow-hidden bg-white shadow-md hover:shadow-xl transition-shadow">
+                  <div className="relative h-44 sm:h-48 overflow-hidden bg-gray-200">
+                    <Image src={restaurant.image} alt={restaurant.name} fill className="object-cover group-hover:scale-110 transition-transform duration-300" unoptimized />
+                    <div className="absolute top-3 right-3 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs sm:text-sm font-medium text-gray-700">
+                      {getPriceRangeLabel(restaurant.priceRange)}
+                    </div>
+                  </div>
+                  <div className="p-4 sm:p-5">
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="text-base sm:text-lg font-bold text-gray-900 group-hover:text-orange-500 transition-colors">{restaurant.name}</h3>
+                      <div className="flex items-center gap-1">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <span className="text-xs sm:text-sm font-medium text-gray-700">{restaurant.rating > 0 ? restaurant.rating.toFixed(1) : 'Nouveau'}</span>
+                      </div>
+                    </div>
+                    <p className="text-xs sm:text-sm text-gray-600 mb-3">{restaurant.cuisine}</p>
+                    <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500">
+                      <div className="flex items-center gap-1"><Clock className="h-4 w-4" /><span>{restaurant.deliveryTime}</span></div>
+                      <div className="flex items-center gap-1"><MapPin className="h-4 w-4" /><span>{restaurant.city}</span></div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-white rounded-xl">
+              <p className="text-gray-500">Aucun restaurant trouvé</p>
+            </div>
+          )}
+
+          <div className="mt-8 text-center md:hidden">
+            <Link href="/search" className="inline-flex items-center gap-2 text-orange-500 hover:text-orange-600 font-medium">
+              Voir tous les restaurants <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
 
       <section className="py-12 sm:py-16 px-4 sm:px-6 bg-gradient-to-br from-orange-50 to-white">
         <div className="w-full max-w-7xl mx-auto">
