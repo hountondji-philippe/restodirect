@@ -41,31 +41,48 @@ export default function LoginPageContent() {
 
       if (result?.ok) {
         try {
+          // Récupérer les données utilisateur
           const userResponse = await fetch('/api/auth/me');
 
           if (userResponse.ok) {
             const userData = await userResponse.json();
+            const userRole = userData.role;
 
+            // Déterminer l'URL de redirection selon le rôle
             let redirectUrl = '/profile';
 
-            if (userData.role === 'RESTAURATEUR') {
-              redirectUrl = '/dashboard';
-            } else if (userData.role === 'LIVREUR') {
-              redirectUrl = '/driver/dashboard';
-            } else if (userData.role === 'SUPER_ADMIN') {
+            if (userRole === 'SUPER_ADMIN') {
               redirectUrl = '/admin';
+            } else if (userRole === 'RESTAURATEUR') {
+              redirectUrl = '/dashboard';
+            } else if (userRole === 'LIVREUR') {
+              redirectUrl = '/driver/dashboard';
             }
 
+            // Vérifier s'il y a un callbackUrl
             const callbackUrl = searchParams.get('callbackUrl');
-            if (callbackUrl) {
-              router.push(callbackUrl);
+            
+            // Si callbackUrl existe et est valide, l'utiliser
+            if (callbackUrl && callbackUrl !== '/' && callbackUrl !== '/auth/login') {
+              // Décoder l'URL si nécessaire
+              const decodedUrl = decodeURIComponent(callbackUrl);
+              router.push(decodedUrl);
             } else {
+              // Sinon, rediriger selon le rôle
               router.push(redirectUrl);
             }
           } else {
-            router.push('/profile');
+            // Si pas de données utilisateur, rediriger selon le callbackUrl ou profil
+            const callbackUrl = searchParams.get('callbackUrl');
+            if (callbackUrl && callbackUrl !== '/' && callbackUrl !== '/auth/login') {
+              router.push(decodeURIComponent(callbackUrl));
+            } else {
+              router.push('/profile');
+            }
           }
         } catch (err) {
+          console.error('Erreur redirection:', err);
+          // En cas d'erreur, rediriger vers le profil
           router.push('/profile');
         }
       }
@@ -80,8 +97,12 @@ export default function LoginPageContent() {
     setError('');
 
     try {
-      const callbackUrl = searchParams.get('callbackUrl') || '/profile';
-      await signIn('google', { callbackUrl });
+      const callbackUrl = searchParams.get('callbackUrl');
+      const redirectUrl = callbackUrl && callbackUrl !== '/' && callbackUrl !== '/auth/login' 
+        ? decodeURIComponent(callbackUrl) 
+        : '/profile';
+      
+      await signIn('google', { callbackUrl: redirectUrl });
     } catch (err) {
       setError('Erreur lors de la connexion avec Google');
       setGoogleLoading(false);
