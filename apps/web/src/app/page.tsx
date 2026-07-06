@@ -243,10 +243,10 @@ export default function HomePage() {
             poster="https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=1920"
             onError={() => setVideoFailed(true)}
           >
-            <source
-              src="https://videos.pexels.com/video-files/3195394/3195394-uhd_2560_1440_25fps.mp4"
-              type="video/mp4"
-            />
+          <source
+            src="/videos/hero.mp4"
+            type="video/mp4"
+          />
           </video>
         )}
 
