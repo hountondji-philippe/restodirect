@@ -47,68 +47,68 @@ export default function DriverDashboard() {
         <p className="text-xs sm:text-sm text-muted-foreground">Vue d'ensemble de votre activité</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        <div className="rounded-lg border border-border bg-background p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Livraisons</p>
-              <p className="text-3xl font-bold text-foreground mt-1">{stats.totalDeliveries}</p>
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4 mb-6">
+        <div className="rounded-lg border border-border bg-background p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm font-medium text-muted-foreground">Livraisons</p>
+              <p className="text-2xl sm:text-3xl font-bold text-foreground mt-1 truncate">{stats.totalDeliveries}</p>
             </div>
-            <div className="p-3 rounded-full bg-blue-100">
-              <Package className="h-6 w-6 text-blue-600" />
+            <div className="p-2 sm:p-3 rounded-full bg-blue-100 self-start sm:self-auto">
+              <Package className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
             </div>
           </div>
         </div>
 
-        <div className="rounded-lg border border-border bg-background p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Gains</p>
-              <p className="text-3xl font-bold text-foreground mt-1">
+        <div className="rounded-lg border border-border bg-background p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm font-medium text-muted-foreground">Gains</p>
+              <p className="text-lg sm:text-2xl lg:text-3xl font-bold text-foreground mt-1 truncate">
                 {formatPrice(stats.totalEarnings, 'XOF')}
               </p>
             </div>
-            <div className="p-3 rounded-full bg-green-100">
-              <Wallet className="h-6 w-6 text-green-600" />
+            <div className="p-2 sm:p-3 rounded-full bg-green-100 self-start sm:self-auto">
+              <Wallet className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
             </div>
           </div>
         </div>
 
-        <div className="rounded-lg border border-border bg-background p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">En cours</p>
-              <p className="text-3xl font-bold text-foreground mt-1">{stats.activeDeliveries}</p>
+        <div className="rounded-lg border border-border bg-background p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm font-medium text-muted-foreground">En cours</p>
+              <p className="text-2xl sm:text-3xl font-bold text-foreground mt-1 truncate">{stats.activeDeliveries}</p>
             </div>
-            <div className="p-3 rounded-full bg-orange-100">
-              <Clock className="h-6 w-6 text-orange-600" />
+            <div className="p-2 sm:p-3 rounded-full bg-orange-100 self-start sm:self-auto">
+              <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
             </div>
           </div>
         </div>
 
-        <div className="rounded-lg border border-border bg-background p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Note</p>
-              <p className="text-3xl font-bold text-foreground mt-1">{stats.rating.toFixed(1)}</p>
+        <div className="rounded-lg border border-border bg-background p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm font-medium text-muted-foreground">Note</p>
+              <p className="text-2xl sm:text-3xl font-bold text-foreground mt-1 truncate">{stats.rating.toFixed(1)}</p>
             </div>
-            <div className="p-3 rounded-full bg-yellow-100">
-              <TrendingUp className="h-6 w-6 text-yellow-600" />
+            <div className="p-2 sm:p-3 rounded-full bg-yellow-100 self-start sm:self-auto">
+              <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-600" />
             </div>
           </div>
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-background p-6">
-        <h2 className="text-lg font-semibold mb-4">Actions rapides</h2>
+      <div className="rounded-lg border border-border bg-background p-4 sm:p-6">
+        <h2 className="text-base sm:text-lg font-semibold mb-4">Actions rapides</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <Link 
             href="/driver/orders" 
             className="flex items-center gap-3 p-4 rounded-md border border-border hover:bg-accent transition-colors"
           >
-            <Package className="h-5 w-5 text-primary" />
-            <div>
-              <p className="font-medium">Voir les commandes</p>
+            <Package className="h-5 w-5 text-primary shrink-0" />
+            <div className="min-w-0">
+              <p className="font-medium text-sm sm:text-base">Voir les commandes</p>
               <p className="text-xs text-muted-foreground">Accepter et gérer les livraisons</p>
             </div>
           </Link>
@@ -116,9 +116,9 @@ export default function DriverDashboard() {
             href="/driver/settings" 
             className="flex items-center gap-3 p-4 rounded-md border border-border hover:bg-accent transition-colors"
           >
-            <Wallet className="h-5 w-5 text-primary" />
-            <div>
-              <p className="font-medium">Paramètres</p>
+            <Wallet className="h-5 w-5 text-primary shrink-0" />
+            <div className="min-w-0">
+              <p className="font-medium text-sm sm:text-base">Paramètres</p>
               <p className="text-xs text-muted-foreground">Gérer votre compte</p>
             </div>
           </Link>

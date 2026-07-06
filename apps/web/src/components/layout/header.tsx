@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, User, Menu, X, Package, Search, LogOut, Settings, ChevronDown } from 'lucide-react';
+import { ShoppingCart, User, Menu, X, Package, Search, LogOut, Settings, ChevronDown, Loader2 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useCartStore } from '@/store/cart-store';
 import { useSession, signOut } from 'next-auth/react';
@@ -10,6 +10,8 @@ export function Header() {
   const { data: session } = useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const cartItemCount = useCartStore((state) => state.getItemCount());
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -33,14 +35,12 @@ export function Header() {
   };
 
   const handleSignOut = async () => {
-  const confirmed = window.confirm('Voulez-vous vraiment vous déconnecter ?');
-  if (confirmed) {
+    setIsLoggingOut(true);
     await signOut({ 
       callbackUrl: '/auth/login',
       redirect: true 
     });
-  }
-};
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white shadow-sm">
@@ -161,7 +161,10 @@ export function Header() {
 
                     <div className="border-t border-gray-100 mt-2 pt-2">
                       <button
-                        onClick={handleSignOut}
+                        onClick={() => {
+                          setIsUserMenuOpen(false);
+                          setShowLogoutModal(true);
+                        }}
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
                       >
                         <LogOut className="h-4 w-4" />
@@ -242,8 +245,8 @@ export function Header() {
                   </Link>
                   <button
                     onClick={() => {
-                      handleSignOut();
                       setIsMenuOpen(false);
+                      setShowLogoutModal(true);
                     }}
                     className="text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors px-3 py-2 rounded-lg flex items-center gap-2 text-left"
                   >
@@ -264,6 +267,45 @@ export function Header() {
           </div>
         )}
       </div>
+
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <LogOut className="h-6 w-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Déconnexion</h3>
+                <p className="text-sm text-gray-600">Êtes-vous sûr de vouloir vous déconnecter ?</p>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                disabled={isLoggingOut}
+                className="flex-1 h-11 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSignOut}
+                disabled={isLoggingOut}
+                className="flex-1 h-11 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isLoggingOut ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Déconnexion...
+                  </>
+                ) : (
+                  'Se déconnecter'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
