@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 export default function LoginPageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -39,12 +40,20 @@ export default function LoginPageContent() {
       }
 
       if (result?.ok) {
-        // Attendre un peu pour que la session soit créée
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Rediriger vers la page d'accueil
-        // Le middleware va automatiquement rediriger vers le bon espace selon le rôle
-        window.location.href = '/';
+        // Attendre que la session soit créée
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        // Déterminer la destination
+        const callbackUrl = searchParams.get('callbackUrl');
+        let destination = '/';
+
+        // Si callbackUrl existe et est différent de login
+        if (callbackUrl && callbackUrl !== '/auth/login' && callbackUrl !== '/') {
+          destination = decodeURIComponent(callbackUrl);
+        }
+
+        // Forcer la redirection
+        window.location.href = destination;
       } else {
         setError('Erreur de connexion');
         setLoading(false);
@@ -61,7 +70,12 @@ export default function LoginPageContent() {
     setError('');
 
     try {
-      await signIn('google', { callbackUrl: '/' });
+      const callbackUrl = searchParams.get('callbackUrl');
+      const destination = callbackUrl && callbackUrl !== '/auth/login' && callbackUrl !== '/'
+        ? decodeURIComponent(callbackUrl)
+        : '/';
+      
+      await signIn('google', { callbackUrl: destination });
     } catch (err) {
       setError('Erreur lors de la connexion avec Google');
       setGoogleLoading(false);
