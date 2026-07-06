@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Search, MapPin, Clock, Star, ShoppingBag, Truck, CheckCircle, ArrowRight, TrendingUp, Quote, Send } from 'lucide-react';
@@ -97,6 +97,9 @@ export default function HomePage() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>(initialTestimonials);
   const [newTestimonial, setNewTestimonial] = useState({ name: '', comment: '', rating: 5, location: '' });
   const [showTestimonialForm, setShowTestimonialForm] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     fetchData();
@@ -106,15 +109,49 @@ export default function HomePage() {
     }
   }, []);
 
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+
+    const tryPlay = () => {
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          const resumeOnInteraction = () => {
+            video.play().catch(() => {});
+            window.removeEventListener('click', resumeOnInteraction);
+            window.removeEventListener('touchstart', resumeOnInteraction);
+          };
+          window.addEventListener('click', resumeOnInteraction, { once: true });
+          window.addEventListener('touchstart', resumeOnInteraction, { once: true });
+        });
+      }
+    };
+
+    if (video.readyState >= 2) {
+      tryPlay();
+    } else {
+      video.addEventListener('loadeddata', tryPlay, { once: true });
+    }
+
+    return () => {
+      video.removeEventListener('loadeddata', tryPlay);
+    };
+  }, []);
+
   const fetchData = async () => {
     try {
       const res = await fetch('/api/restaurants');
       const data = await res.json();
-      
+
       if (res.ok) {
         const restaurantsList = Array.isArray(data) ? data : (data.restaurants || []);
         setRestaurants(restaurantsList);
-        
+
         const dishesWithOrders: any[] = [];
         restaurantsList.forEach((r: Restaurant) => {
           if (r.menuItems && r.menuItems.length > 0) {
@@ -128,7 +165,7 @@ export default function HomePage() {
             });
           }
         });
-        
+
         const sortedDishes = dishesWithOrders
           .sort((a, b) => b.orderCount - a.orderCount)
           .slice(0, 8);
@@ -141,9 +178,9 @@ export default function HomePage() {
             if (existing) {
               existing.count++;
             } else {
-              cityMap.set(r.city, { 
-                name: r.city, 
-                country: r.country || '', 
+              cityMap.set(r.city, {
+                name: r.city,
+                country: r.country || '',
                 count: 1,
                 image: cityImages[r.city] || 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=600'
               });
@@ -194,24 +231,35 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-white">
       <section className="relative h-[500px] sm:h-[600px] md:h-[700px] overflow-hidden bg-black">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="metadata"
-          className="absolute inset-0 w-full h-full object-cover"
-          poster="https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=1920"
-        >
-          <source 
-            src="https://videos.pexels.com/video-files/3195394/3195394-uhd_2560_1440_25fps.mp4" 
-            type="video/mp4" 
+        {!videoFailed && (
+          <video
+            ref={videoRef}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            className="absolute inset-0 z-0 w-full h-full object-cover"
+            poster="https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=1920"
+            onError={() => setVideoFailed(true)}
+          >
+            <source
+              src="https://videos.pexels.com/video-files/3195394/3195394-uhd_2560_1440_25fps.mp4"
+              type="video/mp4"
+            />
+          </video>
+        )}
+
+        {videoFailed && (
+          <div
+            className="absolute inset-0 z-0 w-full h-full bg-cover bg-center"
+            style={{ backgroundImage: "url('https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=1920')" }}
           />
-        </video>
+        )}
 
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80"></div>
+        <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/70 via-black/50 to-black/80"></div>
 
-        <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 sm:px-6 text-center">
+        <div className="relative z-20 h-full flex flex-col items-center justify-center px-4 sm:px-6 text-center">
           <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-4 md:mb-6 max-w-5xl">
             Vos plats préférés,
             <span className="text-orange-400"> livrés chez vous</span>
@@ -514,7 +562,7 @@ export default function HomePage() {
         <div className="w-full max-w-4xl mx-auto text-center">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4">Restez informé de nos offres</h2>
           <p className="text-base sm:text-lg text-gray-400 mb-6 sm:mb-8">Inscrivez-vous à notre newsletter</p>
-          
+
           {newsletterSuccess ? (
             <div className="bg-green-100 border border-green-200 rounded-lg p-4 max-w-md mx-auto">
               <p className="text-green-800 font-medium">Merci pour votre inscription !</p>
