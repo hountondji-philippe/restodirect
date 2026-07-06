@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ShoppingCart, User, Menu, X, Package, Search, LogOut, Settings, ChevronDown } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useCartStore } from '@/store/cart-store';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 
 export function Header() {
   const { data: session } = useSession();
@@ -32,9 +32,15 @@ export function Header() {
     }
   };
 
-  const handleSignOut = () => {
-    window.location.href = '/api/auth/signout';
-  };
+  const handleSignOut = async () => {
+  const confirmed = window.confirm('Voulez-vous vraiment vous déconnecter ?');
+  if (confirmed) {
+    await signOut({ 
+      callbackUrl: '/auth/login',
+      redirect: true 
+    });
+  }
+};
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white shadow-sm">
