@@ -6,13 +6,11 @@ import bcrypt from 'bcryptjs';
 import { prisma } from './prisma';
 import { z } from 'zod';
 
-// ✅ Validation forte du mot de passe
 const loginSchema = z.object({
   email: z.string().email('Email invalide'),
   password: z.string().min(1, 'Mot de passe requis'),
 });
 
-// ✅ Rate limiting simple (en mémoire)
 const loginAttempts = new Map<string, { count: number; lastAttempt: number }>();
 
 function checkRateLimit(email: string): boolean {
@@ -24,13 +22,11 @@ function checkRateLimit(email: string): boolean {
     return true;
   }
   
-  // Reset après 15 minutes
   if (now - record.lastAttempt > 15 * 60 * 1000) {
     loginAttempts.set(email, { count: 1, lastAttempt: now });
     return true;
   }
   
-  // Max 5 tentatives par 15 minutes
   if (record.count >= 5) {
     return false;
   }
@@ -61,7 +57,6 @@ export const authOptions: NextAuthOptions = {
 
         const { email, password } = parsedCredentials.data;
 
-        // ✅ Rate limiting
         if (!checkRateLimit(email)) {
           throw new Error('Trop de tentatives. Réessayez dans 15 minutes.');
         }
@@ -71,7 +66,6 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user || !user.password) {
-          // ✅ Message générique (ne pas révéler si l'email existe)
           throw new Error('Email ou mot de passe incorrect');
         }
 
@@ -80,7 +74,6 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Email ou mot de passe incorrect');
         }
 
-        // ✅ Reset du rate limit après succès
         loginAttempts.delete(email);
 
         return {
@@ -94,7 +87,7 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: 'jwt',
-    maxAge: 24 * 60 * 60, // 24 heures
+    maxAge: 60 * 60, // 1 heure
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -114,6 +107,8 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/auth/login',
+    signOut: '/auth/login',
+    error: '/auth/login',
   },
   secret: process.env.NEXTAUTH_SECRET,
   cookies: {
