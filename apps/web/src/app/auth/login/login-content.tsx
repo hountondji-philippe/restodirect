@@ -40,26 +40,36 @@ export default function LoginPageContent() {
       }
 
       if (result?.ok) {
-        // Attendre que la session soit créée
-        await new Promise(resolve => setTimeout(resolve, 300));
+        try {
+          const userResponse = await fetch('/api/auth/me');
 
-        // Déterminer la destination
-        const callbackUrl = searchParams.get('callbackUrl');
-        let destination = '/';
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
 
-        // Si callbackUrl existe et est différent de login
-        if (callbackUrl && callbackUrl !== '/auth/login' && callbackUrl !== '/') {
-          destination = decodeURIComponent(callbackUrl);
+            let redirectUrl = '/profile';
+
+            if (userData.role === 'RESTAURATEUR') {
+              redirectUrl = '/dashboard';
+            } else if (userData.role === 'LIVREUR') {
+              redirectUrl = '/driver/dashboard';
+            } else if (userData.role === 'SUPER_ADMIN') {
+              redirectUrl = '/admin';
+            }
+
+            const callbackUrl = searchParams.get('callbackUrl');
+            if (callbackUrl) {
+              router.push(callbackUrl);
+            } else {
+              router.push(redirectUrl);
+            }
+          } else {
+            router.push('/profile');
+          }
+        } catch (err) {
+          router.push('/profile');
         }
-
-        // Forcer la redirection
-        window.location.href = destination;
-      } else {
-        setError('Erreur de connexion');
-        setLoading(false);
       }
     } catch (err) {
-      console.error('Erreur connexion:', err);
       setError('Erreur de connexion');
       setLoading(false);
     }
@@ -70,12 +80,8 @@ export default function LoginPageContent() {
     setError('');
 
     try {
-      const callbackUrl = searchParams.get('callbackUrl');
-      const destination = callbackUrl && callbackUrl !== '/auth/login' && callbackUrl !== '/'
-        ? decodeURIComponent(callbackUrl)
-        : '/';
-      
-      await signIn('google', { callbackUrl: destination });
+      const callbackUrl = searchParams.get('callbackUrl') || '/profile';
+      await signIn('google', { callbackUrl });
     } catch (err) {
       setError('Erreur lors de la connexion avec Google');
       setGoogleLoading(false);
