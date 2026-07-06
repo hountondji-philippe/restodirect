@@ -6,8 +6,6 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const publicPaths = [
-    '/',
-    '/search',
     '/auth/login',
     '/auth/register',
     '/auth/forgot-password',
@@ -15,18 +13,10 @@ export async function middleware(request: NextRequest) {
     '/api/auth',
     '/api/restaurants',
     '/api/restaurants/',
-    '/api/orders',
     '/api/orders/track',
     '/partner',
     '/driver/register',
     '/driver/pending',
-    '/restaurants',
-    '/cart',
-    '/checkout',
-    '/order/confirmation',
-    '/order/track',
-    '/order/tracking',
-    '/invite',
     '/_next',
     '/favicon.ico',
     '/logos',
@@ -34,8 +24,34 @@ export async function middleware(request: NextRequest) {
     '/uploads',
   ];
 
-  const isPublicPath = publicPaths.some(path => pathname.startsWith(path));
+  const isPublicPath = publicPaths.some(path => pathname === path || pathname.startsWith(path + '/'));
 
+  // Pages publiques accessibles sans auth
+  if (pathname === '/' || pathname === '/search' || pathname === '/restaurants' || 
+      pathname === '/cart' || pathname === '/checkout' || pathname === '/order/confirmation' || 
+      pathname === '/order/track' || pathname === '/order/tracking' || pathname === '/invite') {
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET
+    });
+
+    // Si utilisateur connecté sur page publique, rediriger vers son espace
+    if (token && pathname === '/') {
+      const userRole = token.role as string;
+      
+      if (userRole === 'SUPER_ADMIN') {
+        return NextResponse.redirect(new URL('/admin', request.url));
+      } else if (userRole === 'RESTAURATEUR') {
+        return NextResponse.redirect(new URL('/dashboard', request.url));
+      } else if (userRole === 'LIVREUR') {
+        return NextResponse.redirect(new URL('/driver/dashboard', request.url));
+      }
+    }
+    
+    return NextResponse.next();
+  }
+
+  // API routes publiques
   if (pathname === '/api/orders' && request.method === 'POST') {
     return NextResponse.next();
   }
@@ -48,28 +64,17 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  if (isPublicPath) {
+    return NextResponse.next();
+  }
+
+  // Vérifier le token pour les routes protégées
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET
   });
 
-  // Redirection intelligente si utilisateur connecté va sur la page d'accueil
-  if (pathname === '/' && token) {
-    const userRole = token.role as string;
-    
-    if (userRole === 'SUPER_ADMIN') {
-      return NextResponse.redirect(new URL('/admin', request.url));
-    } else if (userRole === 'RESTAURATEUR') {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    } else if (userRole === 'LIVREUR') {
-      return NextResponse.redirect(new URL('/driver/dashboard', request.url));
-    }
-  }
-
-  if (isPublicPath) {
-    return NextResponse.next();
-  }
-
+  // Si pas de token, rediriger vers login
   if (!token) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json(
@@ -85,6 +90,7 @@ export async function middleware(request: NextRequest) {
 
   const userRole = token.role as string;
 
+  // Protection APIs Dashboard (RESTAURATEUR uniquement)
   if (pathname.startsWith('/api/dashboard')) {
     if (userRole !== 'RESTAURATEUR') {
       return NextResponse.json(
@@ -94,6 +100,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Protection APIs Driver (LIVREUR uniquement)
   if (pathname.startsWith('/api/driver') || pathname.startsWith('/api/deliveries')) {
     if (userRole !== 'LIVREUR') {
       return NextResponse.json(
@@ -103,6 +110,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Protection APIs Admin (SUPER_ADMIN uniquement)
   if (pathname.startsWith('/api/admin')) {
     if (userRole !== 'SUPER_ADMIN') {
       return NextResponse.json(
@@ -112,12 +120,14 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Protection pages Admin
   if (pathname.startsWith('/admin')) {
     if (userRole !== 'SUPER_ADMIN') {
       return NextResponse.redirect(new URL('/auth/login', request.url));
     }
   }
 
+  // Protection pages Dashboard (RESTAURATEUR uniquement)
   if (pathname.startsWith('/dashboard')) {
     if (userRole !== 'RESTAURATEUR') {
       if (userRole === 'LIVREUR') {
@@ -129,10 +139,12 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Protection pages Livreur
   if (pathname.startsWith('/driver/dashboard') ||
       pathname.startsWith('/driver/orders') ||
       pathname.startsWith('/driver/stats') ||
-      pathname.startsWith('/driver/settings')) {
+      pathname.startsWith('/driver/settings') ||
+      pathname === '/driver') {
     if (userRole !== 'LIVREUR') {
       if (userRole === 'RESTAURATEUR') {
         return NextResponse.redirect(new URL('/dashboard', request.url));
@@ -143,6 +155,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Protection pages Client
   if (pathname.startsWith('/profile') || pathname.startsWith('/account')) {
     if (userRole !== 'CLIENT') {
       if (userRole === 'RESTAURATEUR') {

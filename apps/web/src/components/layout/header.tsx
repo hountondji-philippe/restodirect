@@ -1,12 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ShoppingCart, User, Menu, X, Package, Search, LogOut, Settings, ChevronDown, Loader2 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useCartStore } from '@/store/cart-store';
 import { useSession, signOut } from 'next-auth/react';
 
 export function Header() {
+  const router = useRouter();
   const { data: session } = useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -30,16 +32,28 @@ export function Header() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      window.location.href = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
   const handleSignOut = async () => {
-    setIsLoggingOut(true);
-    await signOut({ 
-      callbackUrl: '/auth/login',
-      redirect: true 
-    });
+    try {
+      setIsLoggingOut(true);
+      
+      // Supprimer manuellement le cookie de session
+      document.cookie = 'next-auth.session-token=; path=/; max-age=0; SameSite=Lax';
+      document.cookie = 'next-auth.callback-url=; path=/; max-age=0; SameSite=Lax';
+      
+      // Appeler signOut sans redirection automatique
+      await signOut({ redirect: false });
+      
+      // Forcer la redirection vers la page de connexion
+      window.location.href = '/auth/login';
+    } catch (error) {
+      console.error('Erreur déconnexion:', error);
+      // En cas d'erreur, rediriger quand même
+      window.location.href = '/auth/login';
+    }
   };
 
   return (
