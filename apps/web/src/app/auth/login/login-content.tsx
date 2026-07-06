@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 export default function LoginPageContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -40,53 +39,18 @@ export default function LoginPageContent() {
       }
 
       if (result?.ok) {
-        try {
-          // Récupérer les données utilisateur
-          const userResponse = await fetch('/api/auth/me');
-
-          if (userResponse.ok) {
-            const userData = await userResponse.json();
-            const userRole = userData.role;
-
-            // Déterminer l'URL de redirection selon le rôle
-            let redirectUrl = '/profile';
-
-            if (userRole === 'SUPER_ADMIN') {
-              redirectUrl = '/admin';
-            } else if (userRole === 'RESTAURATEUR') {
-              redirectUrl = '/dashboard';
-            } else if (userRole === 'LIVREUR') {
-              redirectUrl = '/driver/dashboard';
-            }
-
-            // Vérifier s'il y a un callbackUrl
-            const callbackUrl = searchParams.get('callbackUrl');
-            
-            // Si callbackUrl existe et est valide, l'utiliser
-            if (callbackUrl && callbackUrl !== '/' && callbackUrl !== '/auth/login') {
-              // Décoder l'URL si nécessaire
-              const decodedUrl = decodeURIComponent(callbackUrl);
-              router.push(decodedUrl);
-            } else {
-              // Sinon, rediriger selon le rôle
-              router.push(redirectUrl);
-            }
-          } else {
-            // Si pas de données utilisateur, rediriger selon le callbackUrl ou profil
-            const callbackUrl = searchParams.get('callbackUrl');
-            if (callbackUrl && callbackUrl !== '/' && callbackUrl !== '/auth/login') {
-              router.push(decodeURIComponent(callbackUrl));
-            } else {
-              router.push('/profile');
-            }
-          }
-        } catch (err) {
-          console.error('Erreur redirection:', err);
-          // En cas d'erreur, rediriger vers le profil
-          router.push('/profile');
-        }
+        // Attendre un peu pour que la session soit créée
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Rediriger vers la page d'accueil
+        // Le middleware va automatiquement rediriger vers le bon espace selon le rôle
+        window.location.href = '/';
+      } else {
+        setError('Erreur de connexion');
+        setLoading(false);
       }
     } catch (err) {
+      console.error('Erreur connexion:', err);
       setError('Erreur de connexion');
       setLoading(false);
     }
@@ -97,12 +61,7 @@ export default function LoginPageContent() {
     setError('');
 
     try {
-      const callbackUrl = searchParams.get('callbackUrl');
-      const redirectUrl = callbackUrl && callbackUrl !== '/' && callbackUrl !== '/auth/login' 
-        ? decodeURIComponent(callbackUrl) 
-        : '/profile';
-      
-      await signIn('google', { callbackUrl: redirectUrl });
+      await signIn('google', { callbackUrl: '/' });
     } catch (err) {
       setError('Erreur lors de la connexion avec Google');
       setGoogleLoading(false);
