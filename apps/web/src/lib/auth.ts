@@ -94,9 +94,9 @@ export const authOptions: NextAuthOptions = {
     maxAge: 60 * 60, // 1 heure
   },
   callbacks: {
-    async jwt({ token, user }) {
+        async jwt({ token, user }) {
       if (user) {
-        token.role = (user as any).role;
+        token.role = (user as any).role || 'CLIENT';
         token.id = user.id;
       }
       return token;

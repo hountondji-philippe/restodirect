@@ -32,13 +32,14 @@ export async function middleware(request: NextRequest) {
       pathname === '/order/track' || pathname === '/order/tracking' || pathname === '/invite') {
     const token = await getToken({
       req: request,
-      secret: process.env.NEXTAUTH_SECRET
+      secret: process.env.NEXTAUTH_SECRET,
+      cookieName: 'next-auth.session-token',
     });
 
     // Si utilisateur connecté sur page publique, rediriger vers son espace
     if (token && pathname === '/') {
       const userRole = token.role as string;
-      
+
       if (userRole === 'SUPER_ADMIN') {
         return NextResponse.redirect(new URL('/admin', request.url));
       } else if (userRole === 'RESTAURATEUR') {
@@ -47,7 +48,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/driver/dashboard', request.url));
       }
     }
-    
+
     return NextResponse.next();
   }
 
@@ -71,7 +72,8 @@ export async function middleware(request: NextRequest) {
   // Vérifier le token pour les routes protégées
   const token = await getToken({
     req: request,
-    secret: process.env.NEXTAUTH_SECRET
+    secret: process.env.NEXTAUTH_SECRET,
+    cookieName: 'next-auth.session-token',
   });
 
   // Si pas de token, rediriger vers login
@@ -82,13 +84,15 @@ export async function middleware(request: NextRequest) {
         { status: 401 }
       );
     }
-    
+
     const loginUrl = new URL('/auth/login', request.url);
     loginUrl.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   const userRole = token.role as string;
+
+  console.log('DEBUG MIDDLEWARE →', pathname, '| role:', userRole, '| token présent:', !!token);
 
   // Protection APIs Dashboard (RESTAURATEUR uniquement)
   if (pathname.startsWith('/api/dashboard')) {
